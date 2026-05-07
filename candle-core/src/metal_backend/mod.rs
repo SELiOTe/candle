@@ -1925,7 +1925,16 @@ impl BackendDevice for MetalDevice {
     type Storage = MetalStorage;
 
     fn new(ordinal: usize) -> Result<Self> {
-        let device = Device::all().swap_remove(ordinal);
+        let mut devices = Device::all();
+        let device = if ordinal < devices.len() {
+            devices.swap_remove(ordinal)
+        } else {
+            crate::bail!(
+                "Metal device ordinal {} not found, available devices: {}",
+                ordinal,
+                devices.len()
+            );
+        };
         let command_queue = device.new_command_queue().map_err(MetalError::from)?;
         let kernels = Arc::new(Kernels::new());
         let seed = Arc::new(Mutex::new(
