@@ -3,7 +3,7 @@ use crate::{
 };
 use objc2::{rc::Retained, runtime::ProtocolObject};
 use objc2_foundation::NSString;
-use objc2_metal::{MTLCompileOptions, MTLCreateSystemDefaultDevice, MTLDevice};
+use objc2_metal::{MTLCompileOptions, MTLCopyAllDevices, MTLCreateSystemDefaultDevice, MTLDevice};
 use std::{ffi::c_void, ptr};
 
 #[derive(Clone, Debug)]
@@ -25,10 +25,18 @@ impl Device {
     }
 
     pub fn all() -> Vec<Self> {
-        MTLCreateSystemDefaultDevice()
+        let mut devices: Vec<Self> = MTLCopyAllDevices()
             .into_iter()
             .map(|raw| Device { raw })
-            .collect()
+            .collect();
+
+        if devices.is_empty() {
+            if let Some(raw) = MTLCreateSystemDefaultDevice() {
+                devices.push(Device { raw });
+            }
+        }
+
+        devices
     }
 
     pub fn system_default() -> Option<Self> {
